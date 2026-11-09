@@ -89,6 +89,8 @@ html, body { margin: 0; background: #E8ECEA; color: #161A1D; font-family: 'Noto 
 #dash-root .fx-stack { position: relative; min-height: calc(118px * var(--s)); }
 #dash-root .fx-stack svg { display: block; overflow: visible; }
 #dash-root .fx-stack-leg span::before { border-radius: 1px; width: 9px; }
+#dash-root .fx-stack-leg span.fx-leg-meta::before { width: 2px; height: 9px; border-radius: 0; background: #A57F2C; vertical-align: -1px; }
+#dash-root .fx-stack-leg span[hidden] { display: none; }
 #dash-root table.fx-gt { width: 100%; border-collapse: collapse; font-size: calc(8.8px * var(--s)); border: 1px solid #BFBFBF; }
 #dash-root table.fx-gt th { background: #1E5B4F; color: #FFFFFF; font-weight: 700; text-align: center; padding: calc(3px * var(--s)) 5px; border: 1px solid #1E5B4F; border-left-color: rgba(255,255,255,.35); line-height: 1.15; }
 #dash-root table.fx-gt th:first-child { text-align: left; border-left-color: #1E5B4F; }
@@ -217,14 +219,14 @@ html, body { margin: 0; background: #E8ECEA; color: #161A1D; font-family: 'Noto 
       </div>
       <div class="fx-col" id="avance-area">
         <div class="fx-blk fx-box">
-          <div class="fx-h"><span><span class="fx-n">3</span>Inscripciones por área</span><span class="fx-hn">enero–junio 2026</span></div>
+          <div class="fx-h"><span><span class="fx-n">3</span>Inscripciones por área</span><span class="fx-hn">enero–octubre 2026</span></div>
           <div class="fx-stack fx-stack-i" data-source="avance_area"></div>
-          <div class="fx-legend fx-stack-leg"><span style="--sw: #1E5B4F">Realizadas</span><span style="--sw: #CFE0DA">Pendientes por realizar</span></div>
+          <div class="fx-legend fx-stack-leg"><span style="--sw: #1E5B4F">Realizadas</span><span style="--sw: #CFE0DA">Pendientes por realizar</span><span class="fx-leg-meta" hidden>Programado (meta superada)</span></div>
         </div>
         <div class="fx-blk fx-box">
-          <div class="fx-h"><span><span class="fx-n">4</span>Asistencias por área</span><span class="fx-hn">enero–junio 2026</span></div>
+          <div class="fx-h"><span><span class="fx-n">4</span>Asistencias por área</span><span class="fx-hn">enero–octubre 2026</span></div>
           <div class="fx-stack fx-stack-a" data-source="avance_area"></div>
-          <div class="fx-legend fx-stack-leg"><span style="--sw: #1E5B4F">Realizadas</span><span style="--sw: #CFE0DA">Pendientes por realizar</span></div>
+          <div class="fx-legend fx-stack-leg"><span style="--sw: #1E5B4F">Realizadas</span><span style="--sw: #CFE0DA">Pendientes por realizar</span><span class="fx-leg-meta" hidden>Programado (meta superada)</span></div>
         </div>
       </div>
     </div>
@@ -366,7 +368,7 @@ html, body { margin: 0; background: #E8ECEA; color: #161A1D; font-family: 'Noto 
   </div>
 
   <div class="fx-foot" id="fuentes">
-    <div><b>Fuentes de información:</b> Reportes del Sistema de Información de Prestaciones Sociales Institucionales (SIPSI), 2026. Marco Geoestadístico del Instituto Nacional de Estadística y Geografía (INEGI), 2023.</div>
+    <div><b>Fuentes de información:</b> Reportes del Sistema de Información de Prestaciones Sociales Institucionales (SIPSI), 2026. Marco Geoestadístico del Instituto Nacional de Estadística y Geografía (INEGI), 2023.<br><b>Nota:</b> el corte de inscripciones y asistencias es al cierre del mes de octubre de 2026. Fuente: SIPSI.</div>
     <div style="white-space: nowrap">Hoja 2 / 2</div>
   </div>
 </div>
@@ -565,18 +567,21 @@ dash.calc('unidades_tipo', {
     const W = box.clientWidth || 340;
     const fs = 8.8 * sc, lineH = fs + 3, barH = Math.max(7, 9 * sc), gapT = 4 * sc;
     const rowH = lineH + barH + gapT, H = Math.ceil(rows.length * rowH + 2 * sc);
-    const max = Math.max(...rows.filter((r) => r.area !== 'Total').map((r) => Number(r[pF]) || 0), 1);
-    const totMax = Math.max(...rows.map((r) => Number(r[pF]) || 0), 1);
+    const big = (r) => Math.max(Number(r[pF]) || 0, Number(r[rF]) || 0);
+    const max = Math.max(...rows.filter((r) => r.area !== 'Total').map(big), 1);
+    const totMax = Math.max(...rows.map(big), 1);
     const svg = d3.create('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
       .attr('role', 'img').attr('aria-label', names[1] + ' respecto a lo programado, por área');
     const tip = document.createElement('div'); tip.className = 'fx-tip'; tip.hidden = true;
     box.replaceChildren(svg.node(), tip);  // en el documento para poder medir textos
+    const legMeta = box.parentNode && box.parentNode.querySelector('.fx-leg-meta');
+    if (legMeta) legMeta.hidden = !rows.some((r) => (Number(r[rF]) || 0) > (Number(r[pF]) || 0));
     rows.forEach((r, i) => {
       const isTot = r.area === 'Total';
       const y = i * rowH + (isTot ? 2 * sc : 0);
       const scaleMax = isTot ? totMax : max;
       const bw = W * (Number(r[pF]) || 0) / scaleMax;
-      const rw = Math.min(bw, W * (Number(r[rF]) || 0) / scaleMax);
+      const rw = W * (Number(r[rF]) || 0) / scaleMax;  // puede superar lo programado
       const g = svg.append('g').attr('transform', `translate(0,${y})`);
       if (isTot) g.append('line').attr('x1', 0).attr('x2', W).attr('y1', -1.5 * sc).attr('y2', -1.5 * sc).attr('stroke', '#161A1D').attr('stroke-width', 0.8);
       const name = g.append('text').attr('x', 0).attr('y', fs).attr('font-size', fs).attr('font-weight', isTot ? 700 : 400).attr('fill', '#161A1D').text(r.area);
@@ -593,6 +598,8 @@ dash.calc('unidades_tipo', {
       if (inR.node().getComputedTextLength() + 6 > rw) inR.remove();
       const inP = g.append('text').attr('x', bw - 3).attr('y', by + barH - 2 * sc).attr('text-anchor', 'end').attr('font-size', fs * 0.9).attr('fill', '#1E5B4F').text(fmt(r[pF]));
       if (inP.node().getComputedTextLength() + 6 > bw - rw) inP.remove();
+      // Meta superada: marca dorada donde termina lo programado
+      if (rw > bw + 0.5) g.append('line').attr('x1', bw).attr('x2', bw).attr('y1', by - 1.5).attr('y2', by + barH + 1.5).attr('stroke', '#A57F2C').attr('stroke-width', 2);
       g.append('rect').attr('x', 0).attr('y', 0).attr('width', W).attr('height', rowH).attr('fill', 'transparent')
         .on('mouseenter mousemove', (event) => {
           const lines = [[r.area, true], [names[0] + ': ' + fmt(r[pF])], [names[1] + ': ' + fmt(r[rF])],

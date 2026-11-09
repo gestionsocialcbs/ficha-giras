@@ -42,7 +42,9 @@ python herramientas/actualizar_datos.py \
   --asistencias Asistencias.xlsx \
   --plantilla Plantilla.xlsx \
   --patrimonio 2026_REGISTRO_REVISADO_DEL_PATRIMONIO_CULTURAL_IMSS.xlsx \
-  --plantilla-unidades 1_Plantilla.xlsx
+  --plantilla-unidades 1_Plantilla.xlsx \
+  --gimnasios Inscritos_Asistencias_Gym.xlsx \
+  --top10 "Top10 actividades.xlsx"
 ```
 
 Después sube a GitHub el `assets/data.js` actualizado.
@@ -61,6 +63,8 @@ Los datos que no vienen en Excel están en la carpeta `datos/` en formato JSON y
 | `Claude_inscritos.xlsx` | Avance de inscripciones (3) |
 | `Asistencias.xlsx` | Avance de asistencias (4); se omite la fila de total nacional |
 | `Plantilla.xlsx` | Plazas autorizadas, cubiertas y vacantes (8) |
+| `Inscritos_Asistencias_Gym.xlsx` | Gimnasios equipados por HCT (7); sustituye a la hoja Cat_Gym del catálogo |
+| `Top10 actividades.xlsx` | Top 10 de actividades (11); sustituye a la hoja Top_Actividades del catálogo |
 | `1_Plantilla.xlsx` | Personas voluntarias (8); el detalle por puesto y unidad queda en los datos |
 | `2026_REGISTRO_REVISADO_DEL_PATRIMONIO_CULTURAL_IMSS.xlsx` | Acervo cultural (10): bienes por OOAD y tipología de obra, con la arquitectura (bienes inmuebles) como «Piezas de arquitectura»; los registros de Nivel Central no se asignan a ninguna OOAD |
 
