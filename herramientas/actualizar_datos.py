@@ -5,7 +5,7 @@ Uso (desde la carpeta del proyecto):
     python herramientas/actualizar_datos.py --catalogos General_Catalogos.xlsx \
         --inscritos Claude_inscritos.xlsx --asistencias Asistencias.xlsx --plantilla Plantilla.xlsx \
         --patrimonio 2026_REGISTRO_REVISADO_DEL_PATRIMONIO_CULTURAL_IMSS.xlsx \
-        --plantilla-unidades 1_Plantilla.xlsx
+        --plantilla-unidades 1_Plantilla.xlsx [--gimnasios Inscritos_Asistencias_Gym.xlsx] [--top10 "Top10 actividades.xlsx"]
 
 Requiere: pip install pandas openpyxl
 Los datos que no vienen en Excel (PPI del APEF 2027 y mantenimiento)
@@ -41,6 +41,8 @@ def main():
     ap.add_argument("--plantilla", required=True)
     ap.add_argument("--patrimonio", required=True, help="Registro revisado del Patrimonio Cultural IMSS")
     ap.add_argument("--plantilla-unidades", required=True, help="Plantilla de personal por unidad y puesto (1_Plantilla.xlsx)")
+    ap.add_argument("--gimnasios", help="Inscritos_Asistencias_Gym.xlsx; si se da, sustituye a la hoja Cat_Gym del catálogo")
+    ap.add_argument("--top10", help="Top10 actividades.xlsx; si se da, sustituye a la hoja Top_Actividades del catálogo")
     ap.add_argument("--json-dir", help="Carpeta donde guardar además un JSON por tabla (para el tablero)")
     a = ap.parse_args()
 
@@ -61,6 +63,17 @@ def main():
     d["uopsi"] = filas(u[["cve", "cve_ooad", "tipo", "clave", "unidad", "ciudad", "lat", "lon", "aforo", "instalaciones", "funciones_inbal", "personas_voluntarias", "asistencias_imss_cultura", "direccion", "estatus"]])
     m = x["Mundialito_IMSS"].rename(columns={"Cv_OOAD": "cve_ooad", "Tipo": "tipo_unidad", "Descripción": "unidad", "Deporte": "modalidad", "Tipo_Instalación": "instalacion"})
     d["mundialito"] = filas(m[["cve", "cve_ooad", "unidad", "tipo_unidad", "modalidad", "instalacion"]])  # sin responsable ni contacto
+
+    if a.gimnasios:
+        gy = pd.read_excel(a.gimnasios)
+        gy = gy.rename(columns={"cantidad": "gimnasios", "Inscritos": "inscritos", "Asistencias": "asistencias"})
+        d["gimnasios"] = filas(gy.dropna(subset=["cve_ooad"])[["cve_ooad", "gimnasios", "inscritos", "asistencias"]])
+
+    if a.top10:
+        tp = pd.read_excel(a.top10).dropna(subset=["CVE_OOAD"])
+        tp = tp.rename(columns={"CVE_OOAD": "cve_ooad", "TOP": "posicion", "DES_ACTIVIDAD_COMUN": "actividad", "Inscripciones": "inscritos", "Asistencias": "asistencias"})
+        tp["actividad"] = tp["actividad"].astype(str).str.strip().replace({"Habitos Saludables": "Hábitos Saludables"})
+        d["top_actividades"] = filas(tp[["cve_ooad", "posicion", "actividad", "inscritos", "asistencias"]])
 
     ins = pd.read_excel(a.inscritos)
     ins = ins.rename(columns={"CVE_OOAD": "cve_ooad", "DES_OOAD": "ooad",
